@@ -1,0 +1,618 @@
+
+import { useEffect, useState } from "react";
+
+import Clientes from "./pages/Clientes";
+import Materiales from "./pages/Materiales";
+import Modelos from "./pages/Modelos";
+import MedidasAutomaticas from "./pages/MedidasAutomaticas";
+
+import "./App.css";
+
+// ==========================================
+// SISTEMA WEB CORPORACIÓN ORTEGA
+// ==========================================
+
+const modulos = [
+  "Dashboard",
+  "Clientes",
+  "Materiales",
+  "Modelos de estructuras",
+  "Medidas Automáticas",
+  "Cotizaciones",
+  "Pedidos",
+  "Artículos",
+  "Almacén",
+  "Producción",
+  "Compras",
+  "Entregas",
+  "Pagos",
+  "Reportes",
+  "Clientes (local)",
+];
+
+const formularioInicial = {
+  nombres: "",
+  apellidos: "",
+  telefono: "",
+  correo: "",
+};
+
+function App() {
+  const [pagina, setPagina] = useState("Dashboard");
+
+  // Clientes del sistema anterior.
+  // Los conservamos hasta migrarlos a PostgreSQL.
+
+  const [clientesLocales, setClientesLocales] = useState(
+    () => {
+      try {
+        const guardados = localStorage.getItem(
+          "ortega_clientes"
+        );
+
+        const datos = guardados
+          ? JSON.parse(guardados)
+          : [];
+
+        return Array.isArray(datos) ? datos : [];
+      } catch {
+        return [];
+      }
+    }
+  );
+
+  const [formularioLocal, setFormularioLocal] =
+    useState(formularioInicial);
+
+  const [editandoLocal, setEditandoLocal] =
+    useState(null);
+
+  // Contador real de PostgreSQL
+
+  const [totalClientes, setTotalClientes] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "ortega_clientes",
+      JSON.stringify(clientesLocales)
+    );
+  }, [clientesLocales]);
+
+  useEffect(() => {
+    if (pagina !== "Dashboard") {
+      return;
+    }
+
+    let activo = true;
+
+    async function contarClientes() {
+      try {
+        const respuesta = await fetch("/api/clientes", {
+          credentials: "include",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!respuesta.ok) {
+          throw new Error("No disponible");
+        }
+
+        const datos = await respuesta.json();
+
+        if (activo) {
+          setTotalClientes(
+            Array.isArray(datos.clientes)
+              ? datos.clientes.length
+              : null
+          );
+        }
+      } catch {
+        if (activo) {
+          setTotalClientes(null);
+        }
+      }
+    }
+
+    contarClientes();
+
+    return () => {
+      activo = false;
+    };
+  }, [pagina]);
+
+  // ==========================================
+  // FUNCIONES DE CLIENTES LOCALES
+  // ==========================================
+
+  function cambiarCampoLocal(evento) {
+    const { name, value } = evento.target;
+
+    setFormularioLocal((anterior) => ({
+      ...anterior,
+      [name]: value,
+    }));
+  }
+
+  function guardarClienteLocal(evento) {
+    evento.preventDefault();
+
+    if (!formularioLocal.nombres.trim()) {
+      alert("Ingresa el nombre del cliente.");
+      return;
+    }
+
+    if (editandoLocal !== null) {
+      setClientesLocales((anterior) =>
+        anterior.map((cliente) =>
+          cliente.id === editandoLocal
+            ? {
+                ...cliente,
+                ...formularioLocal,
+              }
+            : cliente
+        )
+      );
+    } else {
+      const nuevoCliente = {
+        id: crypto.randomUUID(),
+        ...formularioLocal,
+      };
+
+      setClientesLocales((anterior) => [
+        ...anterior,
+        nuevoCliente,
+      ]);
+    }
+
+    setFormularioLocal(formularioInicial);
+    setEditandoLocal(null);
+  }
+
+  function editarClienteLocal(cliente) {
+    setFormularioLocal({
+      nombres: cliente.nombres || "",
+      apellidos: cliente.apellidos || "",
+      telefono: cliente.telefono || "",
+      correo: cliente.correo || "",
+    });
+
+    setEditandoLocal(cliente.id);
+  }
+
+  function eliminarClienteLocal(id) {
+    if (
+      !window.confirm(
+        "¿Eliminar este cliente del almacenamiento local?"
+      )
+    ) {
+      return;
+    }
+
+    setClientesLocales((anterior) =>
+      anterior.filter((cliente) => cliente.id !== id)
+    );
+
+    if (editandoLocal === id) {
+      setEditandoLocal(null);
+      setFormularioLocal(formularioInicial);
+    }
+  }
+
+  // ==========================================
+  // INTERFAZ PRINCIPAL
+  // ==========================================
+
+  return (
+    <div className="app-layout">
+      {/* MENÚ LATERAL */}
+
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <h5 className="fw-bold mb-1">
+            CORPORACIÓN ORTEGA
+          </h5>
+
+          <small>Sistema de Gestión</small>
+        </div>
+
+        <nav className="mt-4">
+          {modulos.map((modulo) => (
+            <button
+              key={modulo}
+              type="button"
+              className={
+                "sidebar-link " +
+                (pagina === modulo ? "activo" : "")
+              }
+              onClick={() => setPagina(modulo)}
+            >
+              {modulo}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      {/* CONTENIDO PRINCIPAL */}
+
+      <main className="contenido">
+        <header className="barra-superior">
+          <h4 className="mb-0">{pagina}</h4>
+
+          <span className="text-muted">
+            Corporación Ortega
+          </span>
+        </header>
+
+        <div className="container-fluid py-4">
+          {/* ================================
+              DASHBOARD
+          ================================ */}
+
+          {pagina === "Dashboard" && (
+            <>
+              <h5 className="mb-4">
+                Resumen general
+              </h5>
+
+              <div className="row g-3">
+                <div className="col-md-4">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body">
+                      <p className="text-muted mb-1">
+                        Clientes en PostgreSQL
+                      </p>
+
+                      <h2>
+                        {totalClientes === null
+                          ? "—"
+                          : totalClientes}
+                      </h2>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body">
+                      <p className="text-muted mb-1">
+                        Backend
+                      </p>
+
+                      <h5>Laravel 13</h5>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body">
+                      <p className="text-muted mb-1">
+                        Base de datos
+                      </p>
+
+                      <h5>PostgreSQL 18</h5>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="alert alert-info mt-4">
+                Corporación Ortega dispone de gestión
+                de materiales, modelos de estructuras,
+                medidas automáticas y módulo de clientes
+                conectado a PostgreSQL.
+              </div>
+
+              {/* ACCESO A CLIENTES */}
+
+              <div className="card border-0 shadow-sm mt-4">
+                <div className="card-body">
+                  <h5>Gestión de clientes</h5>
+
+                  <p className="text-muted">
+                    Registra clientes con documento,
+                    razón social, teléfono y dirección.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={() => setPagina("Clientes")}
+                  >
+                    Administrar clientes
+                  </button>
+                </div>
+              </div>
+
+              {/* ACCESO A MATERIALES */}
+
+              <div className="card border-0 shadow-sm mt-4">
+                <div className="card-body">
+                  <h5>Gestión de materiales</h5>
+
+                  <p className="text-muted">
+                    Registra perfiles, tubos, planchas
+                    y otros materiales metálicos.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={() => setPagina("Materiales")}
+                  >
+                    Administrar materiales
+                  </button>
+                </div>
+              </div>
+
+              {/* ACCESO A MODELOS */}
+
+              <div className="card border-0 shadow-sm mt-4">
+                <div className="card-body">
+                  <h5>Modelos de estructuras metálicas</h5>
+
+                  <p className="text-muted">
+                    Configura estructuras, materiales,
+                    piezas y reglas de cálculo.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={() =>
+                      setPagina("Modelos de estructuras")
+                    }
+                  >
+                    Registrar estructura
+                  </button>
+                </div>
+              </div>
+
+              {/* ACCESO A MEDIDAS */}
+
+              <div className="card border-0 shadow-sm mt-4">
+                <div className="card-body">
+                  <h5>Medidas automáticas</h5>
+
+                  <p className="text-muted">
+                    Calcula las medidas y cantidades
+                    de materiales según las dimensiones
+                    de cada estructura.
+                  </p>
+
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() =>
+                      setPagina("Medidas Automáticas")
+                    }
+                  >
+                    Calcular medidas
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ================================
+              CLIENTES EN POSTGRESQL
+          ================================ */}
+
+          {pagina === "Clientes" && (
+            <Clientes />
+          )}
+
+          {/* ================================
+              MATERIALES
+          ================================ */}
+
+          {pagina === "Materiales" && (
+            <Materiales />
+          )}
+
+          {/* ================================
+              MODELOS DE ESTRUCTURAS
+          ================================ */}
+
+          {pagina === "Modelos de estructuras" && (
+            <Modelos />
+          )}
+
+          {/* ================================
+              MEDIDAS AUTOMÁTICAS
+          ================================ */}
+
+          {pagina === "Medidas Automáticas" && (
+            <MedidasAutomaticas />
+          )}
+
+          {/* ================================
+              CLIENTES LOCALES ANTERIORES
+          ================================ */}
+
+          {pagina === "Clientes (local)" && (
+            <>
+              <h5 className="mb-3">
+                Clientes del sistema anterior
+              </h5>
+
+              <div className="alert alert-warning">
+                Esta pantalla conserva los clientes
+                guardados anteriormente en el navegador.
+                No están sincronizados con PostgreSQL.
+              </div>
+
+              <div className="card border-0 shadow-sm mb-4">
+                <div className="card-body">
+                  <h6 className="mb-3">
+                    {editandoLocal !== null
+                      ? "Editar cliente local"
+                      : "Registrar cliente local"}
+                  </h6>
+
+                  <form onSubmit={guardarClienteLocal}>
+                    <div className="row g-3">
+                      {[
+                        ["nombres", "Nombres"],
+                        ["apellidos", "Apellidos"],
+                        ["telefono", "Teléfono"],
+                        ["correo", "Correo electrónico"],
+                      ].map(([campo, etiqueta]) => (
+                        <div
+                          className="col-md-6"
+                          key={campo}
+                        >
+                          <label className="form-label">
+                            {etiqueta}
+                          </label>
+
+                          <input
+                            className="form-control"
+                            name={campo}
+                            type={
+                              campo === "correo"
+                                ? "email"
+                                : "text"
+                            }
+                            value={formularioLocal[campo]}
+                            onChange={cambiarCampoLocal}
+                            required={campo === "nombres"}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="d-flex gap-2 mt-3">
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                      >
+                        {editandoLocal !== null
+                          ? "Actualizar"
+                          : "Guardar"}
+                      </button>
+
+                      {editandoLocal !== null && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setEditandoLocal(null);
+                            setFormularioLocal(
+                              formularioInicial
+                            );
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div className="card border-0 shadow-sm">
+                <div className="card-body">
+                  <h6>Listado de clientes locales</h6>
+
+                  <div className="table-responsive">
+                    <table className="table table-striped">
+                      <thead>
+                        <tr>
+                          <th>Nombre</th>
+                          <th>Teléfono</th>
+                          <th>Correo</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {clientesLocales.map((cliente) => (
+                          <tr key={cliente.id}>
+                            <td>
+                              {cliente.nombres}{" "}
+                              {cliente.apellidos}
+                            </td>
+
+                            <td>{cliente.telefono}</td>
+                            <td>{cliente.correo}</td>
+
+                            <td>
+                              <div className="d-flex gap-2">
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-primary"
+                                  onClick={() =>
+                                    editarClienteLocal(
+                                      cliente
+                                    )
+                                  }
+                                >
+                                  Editar
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() =>
+                                    eliminarClienteLocal(
+                                      cliente.id
+                                    )
+                                  }
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+
+                        {clientesLocales.length === 0 && (
+                          <tr>
+                            <td
+                              colSpan={4}
+                              className="text-center text-muted py-4"
+                            >
+                              No hay clientes locales.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ================================
+              MÓDULOS PENDIENTES
+          ================================ */}
+
+          {![
+            "Dashboard",
+            "Clientes",
+            "Materiales",
+            "Modelos de estructuras",
+            "Medidas Automáticas",
+            "Clientes (local)",
+          ].includes(pagina) && (
+            <div className="card border-0 shadow-sm">
+              <div className="card-body p-4">
+                <h5>Módulo de {pagina}</h5>
+
+                <p className="text-muted mb-0">
+                  Pantalla preparada para su próxima
+                  implementación.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default App;

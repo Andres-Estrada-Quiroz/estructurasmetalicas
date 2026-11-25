@@ -1,0 +1,125 @@
+
+# ==========================================
+# CORPORACION ORTEGA
+# SISTEMA WEB - BACKEND LARAVEL 13
+# ==========================================
+
+# ==========================================
+# DEPENDENCIAS PHP / COMPOSER
+# ==========================================
+
+/vendor/
+
+# ==========================================
+# VARIABLES DE ENTORNO Y CREDENCIALES
+# ==========================================
+
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# ARCHIVOS GENERADOS POR LARAVEL
+# ==========================================
+
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+
+/storage/app/private/*
+!/storage/app/private/.gitignore
+
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitignore
+
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+
+/storage/logs/*
+!/storage/logs/.gitignore
+
+/public/storage
+
+# ==========================================
+# CACHES Y ARCHIVOS TEMPORALES
+# ==========================================
+
+.phpunit.result.cache
+.phpunit-watcher.yml
+.phpactor.yml
+.phpunit.cache/
+.phpunit.result.cache
+
+/.phpunit.cache/
+
+# ==========================================
+# DEPENDENCIAS NODE Y ARCHIVOS GENERADOS
+# ==========================================
+
+/node_modules/
+/public/build/
+/public/hot
+
+# ==========================================
+# CONFIGURACION LOCAL
+# ==========================================
+
+/auth.json
+
+/.idea/
+/.vscode/
+*.code-workspace
+
+# ==========================================
+# SISTEMA OPERATIVO
+# ==========================================
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ==========================================
+# ARCHIVOS TEMPORALES
+# ==========================================
+
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# ==========================================
+# ARCHIVOS DE RESPALDO
+# ==========================================
+
+*.sql
+*.dump
+*.backup
+*.zip
+*.rar
+*.7z
+
+# ==========================================
+# CLAVES Y CERTIFICADOS PRIVADOS
+# ==========================================
+
+*.pem
+*.key
+*.p12
+*.pfx
+
+# ==========================================
+# HERRAMIENTAS DE DESARROLLO
+# ==========================================
+
+/.phpunit-watcher.yml
+/.fleet/
+/.phpstorm.meta.php
+
+# ==========================================
+# LARAVEL PAIL
+# ==========================================
+
+/storage/pail/

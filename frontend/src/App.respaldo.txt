@@ -1,0 +1,356 @@
+
+import { useEffect, useState } from "react";
+
+const modulos = [
+  "Dashboard",
+  "Clientes",
+  "Cotizaciones",
+  "Pedidos",
+  "Materiales",
+  "Artículos",
+  "Almacén",
+  "Producción",
+  "Compras",
+  "Entregas",
+  "Pagos",
+  "Reportes",
+];
+
+const inicial = {
+  nombres: "",
+  apellidos: "",
+  telefono: "",
+  correo: "",
+};
+
+function App() {
+  const [pagina, setPagina] = useState("Dashboard");
+  const [clientes, setClientes] = useState(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem("ortega_clientes") || "[]"
+      );
+    } catch {
+      return [];
+    }
+  });
+
+  const [formulario, setFormulario] = useState(inicial);
+  const [editando, setEditando] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "ortega_clientes",
+      JSON.stringify(clientes)
+    );
+  }, [clientes]);
+
+  function cambiarCampo(e) {
+    const { name, value } = e.target;
+
+    setFormulario((anterior) => ({
+      ...anterior,
+      [name]: value,
+    }));
+  }
+
+  function guardarCliente(e) {
+    e.preventDefault();
+
+    if (!formulario.nombres.trim()) {
+      alert("Ingresa el nombre del cliente");
+      return;
+    }
+
+    if (editando !== null) {
+      setClientes((anterior) =>
+        anterior.map((cliente) =>
+          cliente.id === editando
+            ? { ...cliente, ...formulario }
+            : cliente
+        )
+      );
+    } else {
+      const nuevoCliente = {
+        id: crypto.randomUUID(),
+        ...formulario,
+      };
+
+      setClientes((anterior) => [
+        ...anterior,
+        nuevoCliente,
+      ]);
+    }
+
+    setFormulario(inicial);
+    setEditando(null);
+  }
+
+  function editarCliente(cliente) {
+    setFormulario({
+      nombres: cliente.nombres,
+      apellidos: cliente.apellidos,
+      telefono: cliente.telefono,
+      correo: cliente.correo,
+    });
+
+    setEditando(cliente.id);
+  }
+
+  function eliminarCliente(id) {
+    if (!window.confirm("¿Eliminar este cliente?")) {
+      return;
+    }
+
+    setClientes((anterior) =>
+      anterior.filter((cliente) => cliente.id !== id)
+    );
+
+    if (editando === id) {
+      setEditando(null);
+      setFormulario(inicial);
+    }
+  }
+
+  return (
+    <div className="app-layout">
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <h5 className="fw-bold mb-1">
+            CORPORACIÓN ORTEGA
+          </h5>
+          <small>Sistema de Gestión</small>
+        </div>
+
+        <nav className="mt-4">
+          {modulos.map((modulo) => (
+            <button
+              key={modulo}
+              type="button"
+              onClick={() => setPagina(modulo)}
+              className={
+                "sidebar-link " +
+                (pagina === modulo ? "activo" : "")
+              }
+            >
+              {modulo}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      <main className="contenido">
+        <header className="barra-superior">
+          <h4 className="mb-0">{pagina}</h4>
+          <span className="text-muted">
+            Corporación Ortega
+          </span>
+        </header>
+
+        <div className="container-fluid py-4">
+          {pagina === "Dashboard" && (
+            <>
+              <h5 className="mb-4">
+                Resumen general
+              </h5>
+
+              <div className="row g-3">
+                <div className="col-md-4">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body">
+                      <p className="text-muted mb-1">
+                        Clientes registrados
+                      </p>
+                      <h2>{clientes.length}</h2>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body">
+                      <p className="text-muted mb-1">
+                        Backend
+                      </p>
+                      <h5>Laravel 13</h5>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-md-4">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body">
+                      <p className="text-muted mb-1">
+                        Base de datos prevista
+                      </p>
+                      <h5>PostgreSQL</h5>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="alert alert-info mt-4">
+                Versión inicial del sistema.
+                El módulo de clientes utiliza
+                almacenamiento local temporal.
+              </div>
+            </>
+          )}
+
+          {pagina === "Clientes" && (
+            <>
+              <h5 className="mb-3">
+                Gestión de clientes
+              </h5>
+
+              <div className="card border-0 shadow-sm mb-4">
+                <div className="card-body">
+                  <h6 className="mb-3">
+                    {editando !== null
+                      ? "Editar cliente"
+                      : "Registrar cliente"}
+                  </h6>
+
+                  <form onSubmit={guardarCliente}>
+                    <div className="row g-3">
+                      {[
+                        ["nombres", "Nombres"],
+                        ["apellidos", "Apellidos"],
+                        ["telefono", "Teléfono"],
+                        ["correo", "Correo electrónico"],
+                      ].map(([campo, etiqueta]) => (
+                        <div
+                          className="col-md-6"
+                          key={campo}
+                        >
+                          <label className="form-label">
+                            {etiqueta}
+                          </label>
+
+                          <input
+                            className="form-control"
+                            name={campo}
+                            type={
+                              campo === "correo"
+                                ? "email"
+                                : "text"
+                            }
+                            value={formulario[campo]}
+                            onChange={cambiarCampo}
+                            required={campo === "nombres"}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-3 d-flex gap-2">
+                      <button
+                        className="btn btn-primary"
+                        type="submit"
+                      >
+                        {editando !== null
+                          ? "Actualizar"
+                          : "Guardar cliente"}
+                      </button>
+
+                      {editando !== null && (
+                        <button
+                          className="btn btn-secondary"
+                          type="button"
+                          onClick={() => {
+                            setEditando(null);
+                            setFormulario(inicial);
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div className="card border-0 shadow-sm">
+                <div className="card-body">
+                  <h6>Listado de clientes</h6>
+
+                  <div className="table-responsive">
+                    <table className="table table-striped align-middle">
+                      <thead>
+                        <tr>
+                          <th>Nombre</th>
+                          <th>Teléfono</th>
+                          <th>Correo</th>
+                          <th>Acciones</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {clientes.map((cliente) => (
+                          <tr key={cliente.id}>
+                            <td>
+                              {cliente.nombres}{" "}
+                              {cliente.apellidos}
+                            </td>
+                            <td>{cliente.telefono}</td>
+                            <td>{cliente.correo}</td>
+                            <td>
+                              <div className="d-flex gap-2">
+                                <button
+                                  className="btn btn-sm btn-outline-primary"
+                                  onClick={() =>
+                                    editarCliente(cliente)
+                                  }
+                                >
+                                  Editar
+                                </button>
+
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() =>
+                                    eliminarCliente(cliente.id)
+                                  }
+                                >
+                                  Eliminar
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+
+                        {clientes.length === 0 && (
+                          <tr>
+                            <td
+                              colSpan="4"
+                              className="text-center text-muted py-4"
+                            >
+                              Todavía no hay clientes registrados.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {!["Dashboard", "Clientes"].includes(pagina) && (
+            <div className="card border-0 shadow-sm">
+              <div className="card-body p-4">
+                <h5>Módulo de {pagina}</h5>
+                <p className="text-muted mb-0">
+                  Pantalla preparada para su próxima
+                  implementación.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default App;

@@ -1,0 +1,29 @@
+﻿# Repositorios internos respaldados
+**/.git-respaldo-*/
+
+# Laravel
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/vendor/
+backend/storage/logs/
+backend/storage/framework/cache/
+backend/storage/framework/sessions/
+backend/storage/framework/views/
+backend/bootstrap/cache/*.php
+
+# React
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+frontend/node_modules/
+frontend/dist/
+
+# Respaldos
+*.backup
+*.dump
+*.bak
+
+# Editor
+.vscode/
+.idea/

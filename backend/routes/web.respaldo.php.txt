@@ -1,0 +1,52 @@
+<?php
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('api/clientes')
+    ->middleware('auth:web')
+    ->group(function () {
+
+        Route::get('/', [
+            \App\Http\Controllers\Api\ClienteController::class,
+            'index',
+        ]);
+
+        Route::post('/', [
+            \App\Http\Controllers\Api\ClienteController::class,
+            'store',
+        ]);
+
+        Route::get('/{id}', [
+            \App\Http\Controllers\Api\ClienteController::class,
+            'show',
+        ])->whereNumber('id');
+
+        Route::put('/{id}', [
+            \App\Http\Controllers\Api\ClienteController::class,
+            'update',
+        ])->whereNumber('id');
+
+        Route::delete('/{id}', [
+            \App\Http\Controllers\Api\ClienteController::class,
+            'destroy',
+        ])->whereNumber('id');
+    });
+
+Route::prefix('api/cotizaciones')
+    ->middleware('auth:web')
+    ->group(function () {
+
+        Route::get('/', [
+            \App\Http\Controllers\Api\CotizacionController::class,
+            'index',
+        ]);
+
+        Route::post('/', [
+            \App\Http\Controllers\Api\CotizacionController::class,
+            'store',
+        ]);
+
+        Route::get('/{id}', [
+            \App\Http\Controllers\Api\CotizacionController::class,
+            'show',
+        ])->whereNumber('id');
+    });
